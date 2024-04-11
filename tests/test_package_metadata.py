@@ -1,6 +1,5 @@
 """Confirm that project metadata is set correctly."""
 import os
-import re
 from typing import Any, Mapping
 
 import toml

@@ -100,16 +100,16 @@ def test_filter_from_dict_missing_file():
         "filepath": "filters/regex/addresses/non_existent.txt",
     }
 
-    with pytest.raises(Exception):
+    # TODO: This test appears to be intended to test that a reference to a file that doesn't exist
+    #       causes an exception - but the excption raised has nothing to do with that file-path.
+    #       Instead, the complaint is about a missing value for the "keyword" key.
+    #       Should be investigated.
+    with pytest.raises(Exception):  # noqa: B017
         filter_from_dict(filter_dict)
 
 
 def test_default_config():
-    filters = load_filters(
-        os.path.join(
-            os.path.dirname(philter_lite.__file__), "configs/philter_delta.toml"
-        )
-    )
+    filters = load_filters(os.path.join(os.path.dirname(philter_lite.__file__), "configs/philter_delta.toml"))
     assert len(filters) > 0
 
 
