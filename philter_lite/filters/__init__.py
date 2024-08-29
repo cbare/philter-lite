@@ -54,90 +54,153 @@ _STATE_NAMES = "(A|a)rizona|AZ|(V|v)irginia|VA|(M|m)innesota|MN|(A|a)laska|AK|(N
 _FULL_NUMBERING = "First|Second|Third|Fourth|Fifth|Sixth|Seventh|Eighth|Ninth|Tenth|Eleventh|Twelfth|Thirteenth|Fourteenth|Fifteenth|Sixteenth|Seventeenth|Eighteenth|Nineteenth|Twentieth"
 
 
-def filter_from_dict(
-    filter_dict,
-    regex_db=filter_db.regex_db,
-    regex_context_db=filter_db.regex_context_db,
-    set_db=filter_db.set_db,
-):
-    known_pattern_types = {
-        "regex",
-        "set",
-        "regex_context",
-        "stanford_ner",
-        "pos_matcher",
-        "match_all",
-    }
-
-    filter_type = filter_dict["type"]
-
-    if filter_type not in known_pattern_types:
-        raise Exception("Pattern type is unknown", filter_type)
-
-    if filter_type == "set":
-        set_keyword = filter_dict["keyword"]
-        data = _nested_get(set_db, set_keyword.split("."))
-        return SetFilter(
-            title=filter_dict["title"],
-            type=filter_type,
-            exclude=filter_dict["exclude"],
-            data=set(data),
-            pos=set(filter_dict["pos"]),
-            phi_type=filter_dict.get("phi_type", "OTHER"),
-        )
-    elif filter_type == "regex":
-        regex_keyword = filter_dict["keyword"]
-        regex = _nested_get(regex_db, regex_keyword.split("."))
-        regex = _interpolate_regex(regex)
-        data = _precompile(regex)
-        return RegexFilter(
-            title=filter_dict["title"],
-            type=filter_type,
-            exclude=filter_dict["exclude"],
-            data=data,
-            phi_type=filter_dict.get("phi_type", "OTHER"),
-        )
-
-    elif filter_type == "regex_context":
-        regex_keyword = filter_dict["keyword"]
-        regex = _nested_get(regex_context_db, regex_keyword.split("."))
-        data = _precompile(regex)
-
-        return RegexContextFilter(
-            title=filter_dict["title"],
-            type=filter_type,
-            exclude=filter_dict["exclude"],
-            context=filter_dict["context"],
-            context_filter=filter_dict["context_filter"],
-            data=data,
-            phi_type=filter_dict.get("phi_type", "OTHER"),
-        )
-    elif filter_type == "pos_matcher":
-        return PosFilter(
-            title=filter_dict["title"],
-            type=filter_type,
-            exclude=filter_dict["exclude"],
-            pos=filter_dict["pos"],
-            phi_type=filter_dict.get("phi_type", "OTHER"),
-        )
-    else:
-        return Filter(
-            title=filter_dict["title"],
-            type=filter_type,
-            exclude=filter_dict["exclude"],
-            phi_type=filter_dict.get("phi_type", "OTHER"),
-        )
-
-
-def load_filters(filter_path) -> List[Filter]:
-    """Load filters from a file on disk.
-
-    File must be a toml file with a key of `filters`.
+class FilterBuilder:
     """
-    if not os.path.exists(filter_path):
-        raise Exception("Filepath does not exist", filter_path)
-    with open(filter_path, "r") as fil_file:
-        return [filter_from_dict(x) for x in toml.loads(fil_file.read())["filters"]]
+    A factory for various types of Filter objects.
+
+    This callable class replaces the function `filter_from_dict` in the
+    original Philter. It gives the client code the opportunity to pass in
+    custom filter definitions.
+
+    Why Philter has two levels of configuration is unknown. The top level
+    defines the set of filters to be used. This class implements a second
+    level in which we look up subtype-specific configuration. I've modified
+    it just enough to allow custom regular expressions.
+    """
+    def __init__(self, regex_db=None, regex_context_db=None, set_db=None):
+        """
+
+        """
+        self.regex_db = regex_db or filter_db.load_regex_db()
+        self.regex_context_db = regex_context_db or filter_db.load_regex_context_db()
+        self.set_db = set_db or filter_db.load_set_db()
+
+    def __call__(self, filter_dict):
+        known_pattern_types = {
+            "regex",
+            "set",
+            "regex_context",
+            "stanford_ner",
+            "pos_matcher",
+            "match_all",
+        }
+
+        filter_type = filter_dict["type"]
+
+        if filter_type not in known_pattern_types:
+            raise ValueError("Pattern type is unknown", filter_type)
+
+        if filter_type == "set":
+            set_keyword = filter_dict["keyword"]
+            data = _nested_get(self.set_db, set_keyword.split("."))
+            return SetFilter(
+                title=filter_dict["title"],
+                type=filter_type,
+                exclude=filter_dict["exclude"],
+                data=set(data),
+                pos=set(filter_dict["pos"]),
+                phi_type=filter_dict.get("phi_type", "OTHER"),
+            )
+        elif filter_type == "regex":
+            regex_keyword = filter_dict["keyword"]
+            regex = _nested_get(self.regex_db, regex_keyword.split("."))
+            regex = _interpolate_regex(regex)
+            data = _precompile(regex)
+            return RegexFilter(
+                title=filter_dict["title"],
+                type=filter_type,
+                exclude=filter_dict["exclude"],
+                data=data,
+                phi_type=filter_dict.get("phi_type", "OTHER"),
+            )
+
+        elif filter_type == "regex_context":
+            regex_keyword = filter_dict["keyword"]
+            regex = _nested_get(self.regex_context_db, regex_keyword.split("."))
+            data = _precompile(regex)
+
+            return RegexContextFilter(
+                title=filter_dict["title"],
+                type=filter_type,
+                exclude=filter_dict["exclude"],
+                context=filter_dict["context"],
+                context_filter=filter_dict["context_filter"],
+                data=data,
+                phi_type=filter_dict.get("phi_type", "OTHER"),
+            )
+        elif filter_type == "pos_matcher":
+            return PosFilter(
+                title=filter_dict["title"],
+                type=filter_type,
+                exclude=filter_dict["exclude"],
+                pos=filter_dict["pos"],
+                phi_type=filter_dict.get("phi_type", "OTHER"),
+            )
+        else:
+            return Filter(
+                title=filter_dict["title"],
+                type=filter_type,
+                exclude=filter_dict["exclude"],
+                phi_type=filter_dict.get("phi_type", "OTHER"),
+            )
+
+
+def load_filters(filters, regex_db=None, regex_context_db=None, set_db=None) -> List[Filter]:
+    """
+    Load and return a list of Filter objects.
+
+    Client code may pass custom configuration through the optional regex_db,
+    regex_context_db, and set_db parameters. If omitted, configuration will be
+    read from the toml files built in to the philter_lite.filters module.
+
+    Parameters
+    ----------
+    filters : str or list of dict
+        If a string, it is interpreted as a filepath to a file containing
+        filter definitions and must be a toml file with a key of `filters`.
+
+        If a list of dict, each dict defines a filter.
+
+    regex_db : dict, optional
+        Contains configuration for RegexFilters.
+
+    regex_context_db : dict, optional
+        Contains configuration for RegexContextFilters.
+
+    set_db : dict, optional
+        Contains configuration for SetFilters.
+
+    Examples
+    --------
+    Load filters from a file with default config:
+
+    >>> filters = load_filters("path/to/philter_delta.toml")
+
+    Load filters with custom regular expressions:
+
+    >>> filters = load_filters(
+    ...     '/path/to/filters.conf',
+    ...     regex_db=load_conf_toml('mypackage.mymodule', 'regex.toml'),
+    ... )
+    """
+    if isinstance(filters, str):
+        if not os.path.exists(filters):
+            raise FileNotFoundError("Filepath does not exist", filters)
+
+        with open(filters, "rt", encoding="utf-8") as fil_file:
+            filters = toml.loads(fil_file.read())["filters"]
+
+    if not isinstance(filters, list):
+        raise RuntimeError(f"Expected a list, found a {type(filters)}")
+
+    # Instantiate a callable FilterBuilder object that we'll use below
+    filter_from_dict = FilterBuilder(
+        regex_db=regex_db,
+        regex_context_db=regex_context_db,
+        set_db=set_db,
+    )
+
+    return [filter_from_dict(x) for x in filters]
 
 
 def _precompile(regex: str) -> Pattern[str]:

@@ -3,21 +3,22 @@ from typing import Any, MutableMapping
 
 import toml
 
-from philter_lite import filters
+FILTERS_PATH = 'philter_lite.filters'
+
+
+def load_conf_toml(package, filename):
+    path = resources.files(package).joinpath(filename)
+    with open(path, 'rt') as f:
+        return toml.loads(f.read())
 
 
 def load_regex_db() -> MutableMapping[str, Any]:
-    return toml.loads(resources.read_text(filters, "regex.toml"))
+    return load_conf_toml(FILTERS_PATH, "regex.toml")
 
 
 def load_regex_context_db() -> MutableMapping[str, Any]:
-    return toml.loads(resources.read_text(filters, "regex_context.toml"))
+    return load_conf_toml(FILTERS_PATH, "regex_context.toml")
 
 
 def load_set_db() -> MutableMapping[str, Any]:
-    return toml.loads(resources.read_text(filters, "set.toml"))
-
-
-regex_db: MutableMapping[str, Any] = load_regex_db()
-regex_context_db: MutableMapping[str, Any] = load_regex_context_db()
-set_db: MutableMapping[str, Any] = load_set_db()
+    return load_conf_toml(FILTERS_PATH, "set.toml")
