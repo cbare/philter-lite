@@ -64,3 +64,37 @@ def test_deidentify_email_address_phone():
     assert "daniela.martinez@mydomain.com" not in deidentified_text
     assert "1497 Marigold Drive" not in deidentified_text
     assert "206-943-1112" not in deidentified_text
+
+
+def test_DDDD_DDDD():
+    text = """
+    Patient Name: Maria D'Angelo
+    Patient ID: 1234-1234
+    """
+    include_map, exclude_map, data_tracker = philter.detect_phi(text, patterns=filters)
+    deidentified_text = philter.transform_text_asterisk(text, include_map)
+
+    assert "1234-1234" not in deidentified_text
+    assert "1234-****" not in deidentified_text
+    assert "****-1234" not in deidentified_text
+    assert "Maria" not in deidentified_text
+    assert "D'Angelo" not in deidentified_text
+
+
+def test_tyrer_cuzick_safe():
+    text = """
+    Risk Assessment
+
+    Tyrer-Cuzick 10 Year model risk: 2.1%.
+    Tyrer Cuzick Lifetime model risk: 3.1%.
+    TC8 risk calculated using BI-RADS ATLAS Density b
+    Myriad Prevalence model risk: 1.5%.
+    MRS Risk Manager: No High Risk calculations found at this time.
+    """
+    include_map, exclude_map, data_tracker = philter.detect_phi(text, patterns=filters)
+    deidentified_text = philter.transform_text_asterisk(text, include_map)
+
+    assert "Tyrer-Cuzick 10 Year model risk: 2.1%" in deidentified_text
+    assert "Tyrer Cuzick Lifetime model risk: 3.1%" in deidentified_text
+    assert "TC8 risk calculated using BI-RADS ATLAS Density b" in deidentified_text
+    assert "MRS Risk Manager: No High Risk calculations" in deidentified_text

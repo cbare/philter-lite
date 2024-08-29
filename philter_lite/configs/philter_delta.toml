@@ -930,6 +930,27 @@ note = ""
 keyword = "safe.smoking_safe"
 
 [[filters]]
+title = "tyrer cuzick safe"
+type = "regex"
+exclude = false
+note = ""
+keyword = "safe.tyrer_cuzick_safe"
+
+[[filters]]
+title = "bi-rads atlas safe"
+type = "regex"
+exclude = false
+note = ""
+keyword = "safe.birads_atlas_safe"
+
+[[filters]]
+title = "mrs risk manager safe"
+type = "regex"
+exclude = false
+note = ""
+keyword = "safe.mrs_risk_manager_safe"
+
+[[filters]]
 title = "full street address"
 type = "regex"
 exclude = true
@@ -1615,6 +1636,13 @@ type = "regex"
 exclude = true
 notes = "This should remove anything that matches any number with 6 or more digits (15 limit is arbitrary)"
 keyword = "mrn_id.DDDDDD+"
+
+[[filters]]
+title = "groups of 4 digits"
+type = "regex"
+exclude = true
+notes = "Remove fake MRNs of the form 1234-1234"
+keyword = "mrn_id.DDDD-DDDD"
 
 [[filters]]
 title = "order number"
