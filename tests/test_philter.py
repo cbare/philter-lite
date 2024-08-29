@@ -4,7 +4,11 @@ from typing import Any, Dict
 import pytest
 
 import philter_lite
-from philter_lite import detect_phi, filter_from_dict, filters, load_filters
+from philter_lite import detect_phi, filters, load_filters
+
+
+# create instance of callable filter builder with default config
+filter_from_dict = filters.FilterBuilder()
 
 
 def test_filter_from_dict():
