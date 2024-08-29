@@ -132,6 +132,9 @@ pain_safe = "(?i)\\b(pain[ ]{1,2}((is|was|as)( a)? )?\\d\\/10)\\b|\\b(\\d\\/10[ 
 bal_safe = "\\bBAL\\s\\d+(ml|ML)\\b"
 bee_safe = "(?i)\\b((honey)\\sbee|bee\\s(venome|sting))\\b"
 re_safe = "(?i)\\b(re\\-[a-z]+\\b|re:)"
+tyrer_cuzick_safe = "(?i)\\btyrer(\\s|\\-)cuzick\\b"
+birads_atlas_safe = "(?i)\\bbi\\-?rads(\\s|\\-)(atlas)?\\b"
+mrs_risk_manager_safe = "(?i)\\bmrs\\srisk\\smanager\\b"
 
 [organizations]
 admitted_from_hospital_13chars = "\\b(?<=admitted from\\s|department at\\s)[A-Z][a-zA-Z]+((\\s|\\-)[A-Z][a-zA-Z]+)?((\\s|\\-)[A-Z][a-zA-Z]+)?\\b"
