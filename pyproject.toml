@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "philter-lite"
-version = "0.5.0"
+version = "0.5.0+volparafork.1"
 description = "Open-source PHI-filtering software. A fork of philter-ucsf."
 readme = "README.md"
 authors = [
