@@ -1,4 +1,6 @@
+import importlib
 import os
+from pathlib import Path
 import re
 import warnings
 from dataclasses import dataclass
@@ -145,7 +147,7 @@ class FilterBuilder:
             )
 
 
-def load_filters(filters, regex_db=None, regex_context_db=None, set_db=None) -> List[Filter]:
+def load_filters(filters=None, regex_db=None, regex_context_db=None, set_db=None) -> List[Filter]:
     """
     Load and return a list of Filter objects.
 
@@ -155,11 +157,13 @@ def load_filters(filters, regex_db=None, regex_context_db=None, set_db=None) -> 
 
     Parameters
     ----------
-    filters : str or list of dict
+    filters : str, PathLike, or list of dict, optional
         If a string, it is interpreted as a filepath to a file containing
         filter definitions and must be a toml file with a key of `filters`.
 
         If a list of dict, each dict defines a filter.
+
+        If None, load default config from philter_lite/configs/philter_delta.toml
 
     regex_db : dict, optional
         Contains configuration for RegexFilters.
@@ -183,12 +187,19 @@ def load_filters(filters, regex_db=None, regex_context_db=None, set_db=None) -> 
     ...     regex_db=load_conf_toml('mypackage.mymodule', 'regex.toml'),
     ... )
     """
-    if isinstance(filters, str):
-        if not os.path.exists(filters):
-            raise FileNotFoundError("Filepath does not exist", filters)
+    if filters is None:
+        filters = (importlib.resources
+            .files('philter_lite.configs')
+            .joinpath('philter_delta.toml')
+        )
 
+    if isinstance(filters, (str, os.PathLike)):
         with open(filters, "rt", encoding="utf-8") as fil_file:
-            filters = toml.loads(fil_file.read())["filters"]
+            filters = toml.loads(fil_file.read())
+
+    # the toml format has key "filters" the has a list of filters
+    if isinstance(filters, dict):
+        filters = filters["filters"]
 
     if not isinstance(filters, list):
         raise RuntimeError(f"Expected a list, found a {type(filters)}")
