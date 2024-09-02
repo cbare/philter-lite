@@ -98,16 +98,12 @@ def test_filter_from_dict_missing_phi_type():
     assert filter.phi_type == "OTHER"
 
 
-def test_filter_from_dict_missing_file():
+def test_filter_from_dict_missing_keyword():
     filter_dict = {
         "type": "regex",
-        "filepath": "filters/regex/addresses/non_existent.txt",
+        "keyword": "non_existent_keyword_asdf",
     }
 
-    # TODO: This test appears to be intended to test that a reference to a file that doesn't exist
-    #       causes an exception - but the excption raised has nothing to do with that file-path.
-    #       Instead, the complaint is about a missing value for the "keyword" key.
-    #       Should be investigated.
     with pytest.raises(Exception):  # noqa: B017
         filter_from_dict(filter_dict)
 
@@ -115,6 +111,11 @@ def test_filter_from_dict_missing_file():
 def test_default_config():
     filters = load_filters(os.path.join(os.path.dirname(philter_lite.__file__), "configs/philter_delta.toml"))
     assert len(filters) > 0
+
+
+def test_non_existent_config():
+    with pytest.raises(FileNotFoundError):
+        load_filters("/doesnt/exist/bonko.toml")
 
 
 def test_detect_phi():
